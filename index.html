@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Laundering Statistics Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #012169;
+            font-size: 2em;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        select {
+            padding: 8px;
+            border: 1px solid #012169;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        select:hover {
+            border-color: #25D366;
+        }
+
+        .grid line {
+            stroke: #e5e5e5;
+            stroke-opacity: 0.5;
+        }
+
+        .tooltip {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <h1>First Chart Test</h1>
+        
+        <div class="chart-container">
+            <!-- Left-aligned titles -->
+            <h2 style="text-align: left; color: #012169; margin: 0 0 10px 60px;">Money Laundering Enforcement in the UK</h2>
+            <div id="subtitle" style="text-align: left; color: #666; font-weight: normal; margin: 0 60px 20px 60px; line-height: 1.4;"></div>
+            
+            <!-- Control panel -->
+            <div style="margin: 0 60px 20px;">
+                <select id="dataset-select">
+                    <option value="principal">Money Laundering as Principal Offence</option>
+                    <option value="all">All Money Laundering Cases</option>
+                </select>
+                
+                <select id="category-select">
+                    <option value="overall">Overall</option>
+                    <option value="individual">Individual</option>
+                    <option value="corporate">Corporate</option>
+                </select>
+            </div>
+            
+            <!-- Chart container -->
+            <div id="ml-statistics-chart"></div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // File paths for GitHub Pages
+        const DATA_FILES = {
+            principal: './data/ML_principle.csv',
+            all: './data/princ_non.csv'
+        };
+
+        // Rest of the JavaScript code remains exactly the same as in the WordPress version
+        // [Previous JavaScript code goes here]
+    });
+    </script>
+</body>
+</html>
