@@ -1,0 +1,679 @@
+<!-- Money Laundering Visualization Container -->
+<div class="ml-chart-container">
+  <div id="ml-trends-chart" class="ml-chart">
+    <h2 class="ml-headline"></h2>
+    <p class="ml-subheadline"></p>
+    
+    <div class="ml-controls">
+      <div class="ml-control-group">
+        <label for="category-select">View:</label>
+        <select id="category-select">
+          <option value="Overall ML stats where ML is the principle offence (covering Sections 327, 328, 329, 330, 331, 332, 333, 336 of POCA, and failure to comply with the MLRs 2007)">Money laundering overall</option>
+          <option value="03801 - Concealing or transferring proceeds of criminal conduct (principal offence only) - Section 327 of POCA">Section 327 of POCA</option>
+          <option value="03802 - Arrangements - being concerned in arrangement, knowing or suspecting, facilitating acquisition, retention, use or control of criminal property by or on behalf of another person (principal offence only) - Section 328 of POCA">Section 328 of POCA</option>
+          <option value="03803 - Acquisition, use or possession of criminal property (principal offence only) - Section 329 of POCA">Section 329 of POCA</option>
+          <option value="03804 - Proceeds of Crime Act 2002 - failure to disclose; another person involved in money laundering - regulated sector (principal offence only) - Section 330 of POCA">Section 330 of POCA</option>
+          <option value="03809 - Failure to comply with the MLRs 2007 (principal offence only)">Breaches of the MLRs 2007</option>
+          <option value="09576 - Triable either way offences related to the MLRs 2017 (principal offence only)">Breaches of the MLRs 2017</option>
+        </select>
+      </div>
+      <div class="ml-control-group">
+        <label for="type-select">Type:</label>
+        <select id="type-select">
+          <option value="Overall">Overall</option>
+          <option value="Individual">Individual</option>
+          <option value="Corporate">Corporate</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="ml-viz-wrapper">
+      <div class="ml-loading">Loading data...</div>
+      <div class="ml-error">Error loading data</div>
+      <svg class="ml-chart-svg"></svg>
+    </div>
+    
+    <div class="ml-footer">
+      <p class="ml-source">Source: Criminal Justice Statistics, December 2023</p>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Base Container */
+.ml-chart-container {
+  max-width: 645px;
+  width: 100%;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.ml-chart {
+  width: 100%;
+  padding: 16px 0;
+}
+
+/* Headlines */
+.ml-headline {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+  padding: 0 16px;
+}
+
+.ml-subheadline {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 24px 0;
+  line-height: 1.4;
+  padding: 0 16px;
+}
+
+/* Controls */
+.ml-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 0 16px;
+  flex-wrap: wrap;
+}
+
+.ml-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ml-control-group label {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.ml-control-group select {
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  color: #333;
+  background-color: white;
+  max-width: 300px;
+  width: 100%;
+}
+
+/* Visualization Area */
+.ml-viz-wrapper {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  margin: 16px 0;
+  background-color: white;
+}
+
+.ml-loading,
+.ml-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: none;
+  z-index: 2;
+}
+
+.ml-error {
+  color: #dc2626;
+}
+
+.ml-chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Chart Elements */
+.ml-axis text {
+  font-size: 12px;
+  fill: #666;
+}
+
+.ml-grid line {
+  stroke: #e5e5e5;
+}
+
+.ml-line {
+  fill: none;
+  stroke-width: 2;
+}
+
+/* Footer */
+.ml-footer {
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.ml-footnote {
+  font-size: 14px;
+  margin-top: 8px;  /* Reduced from the default margin */
+  color: #666;      /* To match the styling of other secondary text */
+  padding: 0 16px;  /* To align with other chart elements */
+}
+
+.ml-source {
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Tooltip */
+.ml-tooltip {
+  position: absolute;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  max-width: 300px;
+  transition: opacity 0.2s ease;
+}
+
+.ml-tooltip-year {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.ml-tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ml-tooltip-row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.ml-tooltip-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.ml-tooltip-label {
+  color: #666;
+}
+
+.ml-tooltip-value {
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .ml-controls {
+    flex-direction: column;
+  }
+  
+  .ml-control-group {
+    width: 100%;
+  }
+  
+  .ml-control-group select {
+    max-width: none;
+  }
+  
+  .ml-viz-wrapper {
+    height: 400px;
+  }
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const CONFIG = {
+        colors: {
+            primary: '#24284B',
+            secondary: '#9F1D32',
+            text: '#666666',
+            grid: '#e5e5e5'
+        },
+        margin: { 
+            top: 20, 
+            right: 120, 
+            bottom: 50, 
+            left: 80 
+        },
+        dimensions: {
+            width: 645,
+            height: 500
+        },
+        transitionDuration: 200,
+        barChartThreshold: 10,
+        categoryNameMap: {
+            'Overall ML stats where ML is the principle offence (covering Sections 327, 328, 329, 330, 331, 332, 333, 336 of POCA, and failure to comply with the MLRs 2007)': 'Money Laundering',
+            '03801 - Concealing or transferring proceeds of criminal conduct (principal offence only) - Section 327 of POCA': 'Section 327 POCA - Concealing Criminal Funds',
+            '03802 - Arrangements - being concerned in arrangement, knowing or suspecting, facilitating acquisition, retention, use or control of criminal property by or on behalf of another person (principal offence only) - Section 328 of POCA': 'Section 328 POCA - Facilitating Money Laundering',
+            '03803 - Acquisition, use or possession of criminal property (principal offence only) - Section 329 of POCA': 'Section 329 POCA - Criminal Property',
+            '03804 - Proceeds of Crime Act 2002 - failure to disclose; another person involved in money laundering - regulated sector (principal offence only) - Section 330 of POCA': 'Section 330 POCA - Failure to Disclose',
+            '03809 - Failure to comply with the MLRs 2007 (principal offence only)': 'Money Laundering Regulations 2007',
+            '09576 - Triable either way offences related to the MLRs 2017 (principal offence only)': 'Money Laundering Regulations 2017'
+        },
+        categoryDescriptions: {
+            'Overall ML stats where ML is the principle offence (covering Sections 327, 328, 329, 330, 331, 332, 333, 336 of POCA, and failure to comply with the MLRs 2007)': 'Overall money laundering prosecutions and convictions where ML was the most serious offence',
+            '03801 - Concealing or transferring proceeds of criminal conduct (principal offence only) - Section 327 of POCA': 'Section 327 of the Proceeds of Crime Act 2002 - concealing criminal funds',
+            '03802 - Arrangements - being concerned in arrangement, knowing or suspecting, facilitating acquisition, retention, use or control of criminal property by or on behalf of another person (principal offence only) - Section 328 of POCA': 'Section 328 of the Proceeds of Crime Act 2002 - facilitating money laundering',
+            '03803 - Acquisition, use or possession of criminal property (principal offence only) - Section 329 of POCA': 'Section 329 of the Proceeds of Crime Act 2002 - acquiring, using, or possessing criminal property',
+            '03804 - Proceeds of Crime Act 2002 - failure to disclose; another person involved in money laundering - regulated sector (principal offence only) - Section 330 of POCA': 'Section 330 of the Proceeds of Crime Act - failing to disclose knowledge or suspicion of money laundering (relating to activities in the regulated sector)',
+            '03809 - Failure to comply with the MLRs 2007 (principal offence only)': 'Failure to comply with the Money Laundering Regulations 2007',
+            '09576 - Triable either way offences related to the MLRs 2017 (principal offence only)': 'Triable either way offences related to the Money Laundering Regulations 2017'
+        }
+    };
+
+    // DOM Elements block 2
+    const container = document.querySelector('#ml-trends-chart');
+    const categorySelect = container.querySelector('#category-select');
+    const typeSelect = container.querySelector('#type-select');
+    const loadingElement = container.querySelector('.ml-loading');
+    const errorElement = container.querySelector('.ml-error');
+    const svg = container.querySelector('.ml-chart-svg');
+
+    // Width and height
+    const width = CONFIG.dimensions.width - CONFIG.margin.left - CONFIG.margin.right;
+    const height = CONFIG.dimensions.height - CONFIG.margin.top - CONFIG.margin.bottom;
+
+    // Set up tooltip
+    let tooltip = document.querySelector('.ml-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'ml-tooltip';
+        document.body.appendChild(tooltip);
+    }
+
+    // Utility Functions
+    function formatNumber(value) {
+        if (value === null || value === undefined) return 'Not Available';
+        return Math.round(value).toLocaleString();
+    }
+
+    function formatYear(year) {
+        return year.replace('-', '/');
+    }
+
+    function pluralize(value, singular, plural) {
+        if (value === 0) return `no ${plural}`;
+        if (value === 1) return `1 ${singular}`;
+        return `${formatNumber(value)} ${plural}`;
+    }
+
+    // Tooltip Functions
+    function showTooltip(event, data) {
+        tooltip.innerHTML = `
+            <div class="ml-tooltip-year">${data.year}</div>
+            <div class="ml-tooltip-content">
+                <div class="ml-tooltip-row">
+                    <div class="ml-tooltip-color" style="background-color: ${CONFIG.colors.primary}"></div>
+                    <span class="ml-tooltip-label">Prosecutions</span>
+                    <span class="ml-tooltip-value">${formatNumber(data.prosecutions)}</span>
+                </div>
+                <div class="ml-tooltip-row">
+                    <div class="ml-tooltip-color" style="background-color: ${CONFIG.colors.secondary}"></div>
+                    <span class="ml-tooltip-label">Convictions</span>
+                    <span class="ml-tooltip-value">${formatNumber(data.convictions)}</span>
+                </div>
+            </div>
+        `;
+
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const pageWidth = window.innerWidth;
+        let left = event.pageX + 10;
+        let top = event.pageY - 10;
+
+        if (left + tooltipRect.width > pageWidth - 10) {
+            left = event.pageX - tooltipRect.width - 10;
+        }
+
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.opacity = 1;
+    }
+
+    function hideTooltip() {
+        tooltip.style.opacity = 0;
+    }
+
+    // Data Processing Functions block 3
+    function processData(csvData) {
+        return d3.group(csvData.map(d => ({
+            ...d,
+            value: d.value ? +d.value : 0
+        })), 
+            d => d.category,
+            d => d.type,
+            d => d.year
+        );
+    }
+
+    function getTypeDescription(type) {
+        switch(type) {
+            case 'Individual': return 'individuals';
+            case 'Corporate': return 'corporate bodies';
+            default: return '';
+        }
+    }
+
+    function generateHeadlines(categoryData, category, type) {
+    if (!categoryData || categoryData.size === 0) {
+        return {
+            headline: 'Money Laundering Statistics Overview',
+            subheadline: 'No data available',
+            footnote: CONFIG.categoryDescriptions[category] || ''
+        };
+    }
+
+    const years = Array.from(categoryData.keys()).sort();
+    const latestYear = years[years.length - 1];
+    const latestData = categoryData.get(latestYear);
+    const categoryName = CONFIG.categoryNameMap[category] || category;
+    
+    const latestPros = latestData.find(d => d.metric === 'Prosecutions')?.value || 0;
+    const latestConv = latestData.find(d => d.metric === 'Convictions')?.value || 0;
+    const convictionRate = latestPros > 0 ? Math.round((latestConv / latestPros) * 100) : 0;
+
+    // No prosecutions in latest year
+    if (latestPros === 0) {
+        // Find the most recent year with prosecutions
+        for (let i = years.length - 2; i >= 0; i--) {
+            const previousYear = years[i];
+            const previousData = categoryData.get(previousYear);
+            const prevPros = previousData?.find(d => d.metric === 'Prosecutions')?.value || 0;
+            const prevConv = previousData?.find(d => d.metric === 'Convictions')?.value || 0;
+
+            if (prevPros > 0) {
+                return {
+                    headline: `${categoryName}${type !== 'Overall' ? ` by ${getTypeDescription(type)}` : ''}: No prosecutions in ${formatYear(latestYear)}`,
+                    subheadline: `Last recorded: ${pluralize(prevPros, 'prosecution', 'prosecutions')}, ${pluralize(prevConv, 'conviction', 'convictions')} in ${formatYear(previousYear)}`,
+                    footnote: CONFIG.categoryDescriptions[category] || ''
+                };
+            }
+        }
+
+        // If no prosecutions found in any year
+        return {
+            headline: `${categoryName}${type !== 'Overall' ? ` by ${getTypeDescription(type)}` : ''}: No prosecutions recorded`,
+            subheadline: 'No historical data available',
+            footnote: CONFIG.categoryDescriptions[category] || ''
+        };
+    }
+
+    return {
+        headline: `${categoryName}${type !== 'Overall' ? ` by ${getTypeDescription(type)}` : ''}: ${pluralize(latestPros, 'prosecution', 'prosecutions')} in ${formatYear(latestYear)}`,
+        subheadline: `${pluralize(latestConv, 'conviction', 'convictions')}${convictionRate > 0 ? ` (${convictionRate}% conviction rate)` : ''}`,
+        footnote: CONFIG.categoryDescriptions[category] || ''
+    };
+}
+
+    // Chart Rendering Functions - BLOCK 4
+    function renderBars(chart, categoryData, x, y, height) {
+        const metrics = ['Prosecutions', 'Convictions'];
+        const barWidth = x.bandwidth() / 2.2;
+
+        metrics.forEach((metric, i) => {
+            const barData = Array.from(categoryData.entries())
+                .map(([year, items]) => ({
+                    year: formatYear(year),
+                    value: items.find(d => d.metric === metric)?.value || 0
+                }));
+
+            chart.selectAll(`.bar-${metric}`)
+                .data(barData)
+                .join('rect')
+                .attr('class', `ml-bar bar-${metric}`)
+                .attr('x', d => x(d.year) + (i * barWidth))
+                .attr('y', d => y(d.value))
+                .attr('width', barWidth)
+                .attr('height', d => Math.max(1, height - y(d.value)))
+                .attr('fill', i === 0 ? CONFIG.colors.primary : CONFIG.colors.secondary)
+                .on('mouseover', function(event, d) {
+                    const yearData = categoryData.get(d.year.replace('/', '-'));
+                    showTooltip(event, {
+                        year: d.year,
+                        prosecutions: yearData.find(item => item.metric === 'Prosecutions')?.value,
+                        convictions: yearData.find(item => item.metric === 'Convictions')?.value
+                    });
+                    d3.select(this)
+                        .transition()
+                        .duration(CONFIG.transitionDuration)
+                        .attr('opacity', 0.7);
+                })
+                .on('mouseout', function() {
+                    hideTooltip();
+                    d3.select(this)
+                        .transition()
+                        .duration(CONFIG.transitionDuration)
+                        .attr('opacity', 1);
+                });
+        });
+    }
+
+    function renderLines(chart, categoryData, x, y) {
+        const metrics = ['Prosecutions', 'Convictions'];
+        
+        metrics.forEach((metric, i) => {
+            const lineData = Array.from(categoryData.entries())
+                .map(([year, items]) => ({
+                    year: formatYear(year),
+                    value: items.find(d => d.metric === metric)?.value || 0
+                }));
+
+            const line = d3.line()
+                .x(d => x(d.year) + x.bandwidth() / 2)
+                .y(d => y(d.value));
+
+            chart.append('path')
+                .datum(lineData)
+                .attr('class', 'ml-line')
+                .attr('fill', 'none')
+                .attr('stroke', i === 0 ? CONFIG.colors.primary : CONFIG.colors.secondary)
+                .attr('stroke-width', 2)
+                .attr('d', line);
+
+            chart.selectAll(`.dot-${metric}`)
+                .data(lineData)
+                .join('circle')
+                .attr('class', `ml-dot dot-${metric}`)
+                .attr('cx', d => x(d.year) + x.bandwidth() / 2)
+                .attr('cy', d => y(d.value))
+                .attr('r', 5)
+                .attr('fill', i === 0 ? CONFIG.colors.primary : CONFIG.colors.secondary)
+                .on('mouseover', function(event, d) {
+                    const yearData = categoryData.get(d.year.replace('/', '-'));
+                    showTooltip(event, {
+                        year: d.year,
+                        prosecutions: yearData.find(item => item.metric === 'Prosecutions')?.value,
+                        convictions: yearData.find(item => item.metric === 'Convictions')?.value
+                    });
+                    d3.select(this)
+                        .transition()
+                        .duration(CONFIG.transitionDuration)
+                        .attr('r', 8);
+                })
+                .on('mouseout', function() {
+                    hideTooltip();
+                    d3.select(this)
+                        .transition()
+                        .duration(CONFIG.transitionDuration)
+                        .attr('r', 5);
+                });
+        });
+    }
+
+    // Chart Update and Legend Functions - BLOCK 5
+    function updateChart(data) {
+        const category = categorySelect.value;
+        const type = category.includes('Section 330') ? 'Overall' : typeSelect.value;
+        const categoryData = data.get(category)?.get(type);
+
+        if (!categoryData) {
+            console.error('No data available for:', { category, type });
+            return;
+        }
+
+        // Update headlines and footnote
+        const { headline, subheadline, footnote } = generateHeadlines(categoryData, category, type);
+        container.querySelector('.ml-headline').textContent = headline;
+        container.querySelector('.ml-subheadline').textContent = subheadline;
+        // Create footnote element if it doesn't exist
+        let footnoteElement = container.querySelector('.ml-footnote');
+        if (!footnoteElement) {
+            footnoteElement = document.createElement('p');
+            footnoteElement.className = 'ml-footnote';
+            const sourceElement = container.querySelector('.ml-source');
+            sourceElement.parentNode.insertBefore(footnoteElement, sourceElement);
+        }
+        footnoteElement.textContent = footnote;
+
+        // Clear and setup SVG
+        const chartSvg = d3.select(svg)
+            .attr('width', CONFIG.dimensions.width)
+            .attr('height', CONFIG.dimensions.height);
+        
+        chartSvg.selectAll('*').remove();
+
+        const chart = chartSvg.append('g')
+            .attr('transform', `translate(${CONFIG.margin.left},${CONFIG.margin.top})`);
+
+        // Setup scales
+        const years = Array.from(categoryData.keys()).sort();
+        const x = d3.scaleBand()
+            .domain(years.map(formatYear))
+            .range([0, width])
+            .padding(0.1);
+
+        const maxValue = d3.max(Array.from(categoryData.values()), 
+            items => d3.max(items, d => d.value)
+        );
+
+        const y = d3.scaleLinear()
+            .domain([0, maxValue * 1.1])
+            .range([height, 0])
+            .nice();
+
+        // Add grid
+        chart.append('g')
+            .attr('class', 'ml-grid')
+            .call(d3.axisLeft(y)
+                .tickSize(-width)
+                .tickFormat(''))
+            .call(g => {
+                g.select('.domain').remove();
+                g.selectAll('.tick line')
+                    .attr('stroke', CONFIG.colors.grid)
+                    .attr('stroke-opacity', 0.5);
+            });
+
+        // Add axes
+        chart.append('g')
+            .attr('class', 'ml-axis')
+            .attr('transform', `translate(0,${height})`)
+            .call(d3.axisBottom(x))
+            .selectAll('text')
+                .style('text-anchor', 'end')
+                .attr('dx', '-.8em')
+                .attr('dy', '.15em')
+                .attr('transform', 'rotate(-45)');
+
+        chart.append('g')
+            .attr('class', 'ml-axis')
+            .call(d3.axisLeft(y).tickFormat(d3.format(',d')));
+
+        // Render chart
+        const useBarChart = type === 'Corporate' || maxValue <= CONFIG.barChartThreshold;
+        if (useBarChart) {
+            renderBars(chart, categoryData, x, y, height);
+        } else {
+            renderLines(chart, categoryData, x, y);
+        }
+
+        // Add legend
+        const legend = chart.append('g')
+            .attr('class', 'ml-legend')
+            .attr('transform', `translate(${width + 10}, 0)`);
+
+        ['Prosecutions', 'Convictions'].forEach((metric, i) => {
+            const legendItem = legend.append('g')
+                .attr('transform', `translate(0, ${i * 25})`);
+
+            legendItem.append('rect')
+                .attr('width', 16)
+                .attr('height', 16)
+                .attr('fill', i === 0 ? CONFIG.colors.primary : CONFIG.colors.secondary);
+
+            legendItem.append('text')
+                .attr('x', 24)
+                .attr('y', 12)
+                .text(metric)
+                .style('font-size', '11px')
+                .style('fill', CONFIG.colors.text);
+        });
+    }
+
+    // Initialization and Event Listeners - BLOCK 6
+    function updateControlVisibility(category) {
+        const typeSelector = container.querySelector('.ml-control-group:nth-child(2)');
+        typeSelector.style.display = category.includes('Section 330') ? 'none' : 'flex';
+    }
+
+    // Load data and initialize
+    d3.csv('/wp-content/uploads/2025/02/ml_data_complete.csv')
+        .then(function(csvData) {
+            const data = processData(csvData);
+            
+            loadingElement.style.display = 'none';
+            svg.style.opacity = 1;
+            
+            updateControlVisibility(categorySelect.value);
+            updateChart(data);
+
+            // Add event listeners
+            categorySelect.addEventListener('change', () => {
+                updateControlVisibility(categorySelect.value);
+                updateChart(data);
+            });
+
+            typeSelect.addEventListener('change', () => updateChart(data));
+
+            // Handle resizing
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => updateChart(data), 250);
+            });
+        })
+        .catch(function(error) {
+            console.error('Error loading data:', error);
+            loadingElement.style.display = 'none';
+            errorElement.style.display = 'block';
+        });
+});
+</script>
